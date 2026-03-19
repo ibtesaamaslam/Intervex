@@ -1,0 +1,16 @@
+packages:
+  "framer-motion": "For premium page transitions and micro-interactions"
+  "recharts": "For rendering performance dashboard charts"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility to safely merge Tailwind CSS classes"
+  "date-fns": "For formatting session dates beautifully"
+
+images:
+  - path: "artifacts/interview-copilot/public/images/hero-bg.png"
+    description: "Abstract, dark, sleek, premium geometric mesh gradient background in deep navy, violet, and subtle cyan"
+    aspect_ratio: "16:9"
+
+notes:
+  - Using pre-generated React Query hooks from @workspace/api-client-react
+  - Defaulting to a forced dark-mode premium aesthetic
+  - Using browser Web Speech API for voice transcription simplicity instead of sending raw audio

@@ -1,22 +1,28 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AI Interview Copilot API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: sessions
+    description: Interview session operations
+  - name: questions
+    description: Interview question operations
+  - name: analyze
+    description: AI analysis operations
+  - name: dashboard
+    description: Dashboard and analytics
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +30,156 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /sessions:
+    get:
+      operationId: listSessions
+      tags: [sessions]
+      summary: List all interview sessions
+      responses:
+        "200":
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Session"
+    post:
+      operationId: createSession
+      tags: [sessions]
+      summary: Create a new interview session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionBody"
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+
+  /sessions/{id}:
+    get:
+      operationId: getSession
+      tags: [sessions]
+      summary: Get a session by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionWithAnswers"
+        "404":
+          description: Not found
+
+  /sessions/{id}/end:
+    post:
+      operationId: endSession
+      tags: [sessions]
+      summary: End an interview session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Session ended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+
+  /questions:
+    get:
+      operationId: listQuestions
+      tags: [questions]
+      summary: Get interview questions
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: difficulty
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Question"
+
+  /analyze:
+    post:
+      operationId: analyzeAnswer
+      tags: [analyze]
+      summary: Analyze an interview answer using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeAnswerBody"
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisResult"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get performance dashboard data
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardData"
+
+  /answers:
+    post:
+      operationId: saveAnswer
+      tags: [sessions]
+      summary: Save an answer to a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveAnswerBody"
+      responses:
+        "201":
+          description: Answer saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Answer"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +190,298 @@ components:
       required:
         - status
 
+    Session:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        role:
+          type: string
+        status:
+          type: string
+          enum: [active, completed]
+        overallScore:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - title
+        - role
+        - status
+        - createdAt
+
+    CreateSessionBody:
+      type: object
+      properties:
+        title:
+          type: string
+        role:
+          type: string
+      required:
+        - title
+        - role
+
+    Question:
+      type: object
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+        followUps:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - text
+        - category
+        - difficulty
+
+    Answer:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: integer
+        questionId:
+          type: integer
+          nullable: true
+        questionText:
+          type: string
+        answerText:
+          type: string
+        clarityScore:
+          type: number
+          nullable: true
+        confidenceScore:
+          type: number
+          nullable: true
+        technicalDepthScore:
+          type: number
+          nullable: true
+        communicationScore:
+          type: number
+          nullable: true
+        overallScore:
+          type: number
+          nullable: true
+        strengths:
+          type: array
+          items:
+            type: string
+          nullable: true
+        weaknesses:
+          type: array
+          items:
+            type: string
+          nullable: true
+        improvedAnswer:
+          type: string
+          nullable: true
+        followUpQuestions:
+          type: array
+          items:
+            type: string
+          nullable: true
+        feedback:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sessionId
+        - questionText
+        - answerText
+        - createdAt
+
+    SessionWithAnswers:
+      allOf:
+        - $ref: "#/components/schemas/Session"
+        - type: object
+          properties:
+            answers:
+              type: array
+              items:
+                $ref: "#/components/schemas/Answer"
+          required:
+            - answers
+
+    AnalyzeAnswerBody:
+      type: object
+      properties:
+        questionText:
+          type: string
+        answerText:
+          type: string
+        role:
+          type: string
+        sessionId:
+          type: integer
+          nullable: true
+        questionId:
+          type: integer
+          nullable: true
+      required:
+        - questionText
+        - answerText
+        - role
+
+    AnalysisResult:
+      type: object
+      properties:
+        answerId:
+          type: integer
+          nullable: true
+        clarityScore:
+          type: number
+        confidenceScore:
+          type: number
+        technicalDepthScore:
+          type: number
+        communicationScore:
+          type: number
+        overallScore:
+          type: number
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        improvedAnswer:
+          type: string
+        followUpQuestions:
+          type: array
+          items:
+            type: string
+        feedback:
+          type: string
+      required:
+        - clarityScore
+        - confidenceScore
+        - technicalDepthScore
+        - communicationScore
+        - overallScore
+        - strengths
+        - weaknesses
+        - improvedAnswer
+        - followUpQuestions
+        - feedback
+
+    SaveAnswerBody:
+      type: object
+      properties:
+        sessionId:
+          type: integer
+        questionId:
+          type: integer
+          nullable: true
+        questionText:
+          type: string
+        answerText:
+          type: string
+        analysisResult:
+          $ref: "#/components/schemas/AnalysisResult"
+          nullable: true
+      required:
+        - sessionId
+        - questionText
+        - answerText
+
+    WeakAreaStat:
+      type: object
+      properties:
+        category:
+          type: string
+        averageScore:
+          type: number
+        sessionCount:
+          type: integer
+      required:
+        - category
+        - averageScore
+        - sessionCount
+
+    DashboardData:
+      type: object
+      properties:
+        totalSessions:
+          type: integer
+        totalAnswers:
+          type: integer
+        averageOverallScore:
+          type: number
+          nullable: true
+        averageClarityScore:
+          type: number
+          nullable: true
+        averageConfidenceScore:
+          type: number
+          nullable: true
+        averageTechnicalDepthScore:
+          type: number
+          nullable: true
+        averageCommunicationScore:
+          type: number
+          nullable: true
+        recentSessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Session"
+        weakAreas:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeakAreaStat"
+        scoreHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreHistoryEntry"
+      required:
+        - totalSessions
+        - totalAnswers
+        - recentSessions
+        - weakAreas
+        - scoreHistory
+
+    ScoreHistoryEntry:
+      type: object
+      properties:
+        date:
+          type: string
+        overallScore:
+          type: number
+        clarityScore:
+          type: number
+        confidenceScore:
+          type: number
+        technicalDepthScore:
+          type: number
+        communicationScore:
+          type: number
+      required:
+        - date
+        - overallScore
+        - clarityScore
+        - confidenceScore
+        - technicalDepthScore
+        - communicationScore
