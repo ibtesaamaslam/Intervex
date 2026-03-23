@@ -15,11 +15,15 @@ const saveAnswerSchema = z.object({
     technicalDepthScore: z.number(),
     communicationScore: z.number(),
     overallScore: z.number(),
+    starScore: z.number().optional(),
+    fillerWordCount: z.number().optional(),
+    toneAnalysis: z.string().optional(),
     strengths: z.array(z.string()),
     weaknesses: z.array(z.string()),
     improvedAnswer: z.string(),
     followUpQuestions: z.array(z.string()),
     feedback: z.string(),
+    starFeedback: z.string().optional(),
   }).optional().nullable(),
 });
 
@@ -36,12 +40,16 @@ router.post("/", async (req, res) => {
     technicalDepthScore: ar ? ar.technicalDepthScore.toFixed(2) : null,
     communicationScore: ar ? ar.communicationScore.toFixed(2) : null,
     overallScore: ar ? ar.overallScore.toFixed(2) : null,
+    starScore: ar?.starScore != null ? ar.starScore.toFixed(2) : null,
+    fillerWordCount: ar?.fillerWordCount ?? 0,
+    toneAnalysis: ar?.toneAnalysis ?? null,
     strengths: ar ? ar.strengths : null,
     weaknesses: ar ? ar.weaknesses : null,
     improvedAnswer: ar ? ar.improvedAnswer : null,
     followUpQuestions: ar ? ar.followUpQuestions : null,
     feedback: ar ? ar.feedback : null,
   }).returning();
+
   res.status(201).json({
     id: answer.id,
     sessionId: answer.sessionId,
@@ -53,6 +61,9 @@ router.post("/", async (req, res) => {
     technicalDepthScore: answer.technicalDepthScore ? parseFloat(answer.technicalDepthScore) : null,
     communicationScore: answer.communicationScore ? parseFloat(answer.communicationScore) : null,
     overallScore: answer.overallScore ? parseFloat(answer.overallScore) : null,
+    starScore: answer.starScore ? parseFloat(answer.starScore) : null,
+    fillerWordCount: answer.fillerWordCount ?? 0,
+    toneAnalysis: answer.toneAnalysis ?? null,
     strengths: answer.strengths,
     weaknesses: answer.weaknesses,
     improvedAnswer: answer.improvedAnswer,

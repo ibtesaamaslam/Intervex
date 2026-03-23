@@ -16,6 +16,13 @@ export type Session = {
   id: number;
   title: string;
   role: string;
+  company: string | null;
+  resumeText: string | null;
+  persona: string;
+  timedMode: boolean;
+  timePerQuestion: number;
+  targetDate: string | null;
+  drillMode: boolean;
   status: "active" | "completed";
   overallScore: number | null;
   createdAt: string;
@@ -24,6 +31,13 @@ export type Session = {
 
 export type Question = {
   id: number;
+  text: string;
+  category: string;
+  difficulty: "easy" | "medium" | "hard";
+  followUps: string[];
+};
+
+export type GeneratedQuestion = {
   text: string;
   category: string;
   difficulty: "easy" | "medium" | "hard";
@@ -41,6 +55,9 @@ export type Answer = {
   technicalDepthScore: number | null;
   communicationScore: number | null;
   overallScore: number | null;
+  starScore: number | null;
+  fillerWordCount: number;
+  toneAnalysis: string | null;
   strengths: string[] | null;
   weaknesses: string[] | null;
   improvedAnswer: string | null;
@@ -58,11 +75,23 @@ export type AnalysisResult = {
   technicalDepthScore: number;
   communicationScore: number;
   overallScore: number;
+  starScore: number;
+  toneAnalysis: string;
+  fillerWordCount: number;
   strengths: string[];
   weaknesses: string[];
   improvedAnswer: string;
   followUpQuestions: string[];
   feedback: string;
+  starFeedback: string;
+};
+
+export type Badge = {
+  id: string;
+  label: string;
+  description: string;
+  earned: boolean;
+  icon: string;
 };
 
 export type DashboardData = {
@@ -73,7 +102,9 @@ export type DashboardData = {
   averageConfidenceScore: number | null;
   averageTechnicalDepthScore: number | null;
   averageCommunicationScore: number | null;
-  recentSessions: Session[];
+  streak: number;
+  badges: Badge[];
+  recentSessions: (Session & { company: string | null })[];
   weakAreas: { category: string; averageScore: number; sessionCount: number }[];
   scoreHistory: {
     date: string;
@@ -88,8 +119,17 @@ export type DashboardData = {
 export const api = {
   sessions: {
     list: () => apiFetch<Session[]>("/sessions"),
-    create: (data: { title: string; role: string }) =>
-      apiFetch<Session>("/sessions", { method: "POST", body: JSON.stringify(data) }),
+    create: (data: {
+      title: string;
+      role: string;
+      company?: string | null;
+      resumeText?: string | null;
+      persona?: string;
+      timedMode?: boolean;
+      timePerQuestion?: number;
+      targetDate?: string | null;
+      drillMode?: boolean;
+    }) => apiFetch<Session>("/sessions", { method: "POST", body: JSON.stringify(data) }),
     get: (id: number) => apiFetch<SessionWithAnswers>(`/sessions/${id}`),
     end: (id: number) => apiFetch<Session>(`/sessions/${id}/end`, { method: "POST" }),
   },
@@ -99,12 +139,26 @@ export const api = {
       return apiFetch<Question[]>(`/questions${qs}`);
     },
   },
+  generateQuestions: (data: {
+    role: string;
+    company?: string | null;
+    persona?: string;
+    resumeText?: string | null;
+    drillCategory?: string | null;
+    count?: number;
+  }) => apiFetch<{ questions: GeneratedQuestion[] }>("/generate-questions", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
   analyze: (data: {
     questionText: string;
     answerText: string;
     role: string;
     sessionId?: number | null;
     questionId?: number | null;
+    company?: string | null;
+    persona?: string | null;
+    resumeText?: string | null;
   }) => apiFetch<AnalysisResult>("/analyze", { method: "POST", body: JSON.stringify(data) }),
   answers: {
     save: (data: {
