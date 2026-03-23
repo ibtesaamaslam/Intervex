@@ -3,9 +3,7 @@ import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
   MessageSquarePlus, 
-  History, 
-  Sparkles,
-  UserCircle,
+  Zap,
   Menu,
   X
 } from "lucide-react";
@@ -25,10 +23,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col h-full bg-card/50 backdrop-blur-xl border-r border-border">
       <div className="p-6 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
-          <Sparkles className="w-5 h-5 text-white" />
+          <Zap className="w-5 h-5 text-white" />
         </div>
         <span className="font-display font-bold text-xl tracking-tight text-foreground">
-          Copilot<span className="text-primary">.ai</span>
+          Inter<span className="text-primary">vex</span>
         </span>
       </div>
 
@@ -58,16 +56,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           );
         })}
       </nav>
-
-      <div className="p-4 border-t border-border/50">
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/5">
-          <UserCircle className="w-8 h-8 text-muted-foreground" />
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">Pro User</span>
-            <span className="text-xs text-muted-foreground">Free Tier</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 
@@ -81,8 +69,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Mobile Header & Sidebar */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-md border-b border-border z-50 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary" />
-          <span className="font-display font-bold">Copilot.ai</span>
+          <Zap className="w-5 h-5 text-primary" />
+          <span className="font-display font-bold">Inter<span className="text-primary">vex</span></span>
         </div>
         <button onClick={() => setMobileOpen(true)} className="p-2 text-foreground">
           <Menu className="w-6 h-6" />
@@ -116,7 +104,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 h-screen overflow-y-auto pt-16 md:pt-0 relative">
-        {/* Ambient background glows */}
         <div className="fixed top-0 right-0 w-1/2 h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10 pointer-events-none opacity-50" />
         <div className="fixed bottom-0 left-1/4 w-1/2 h-[400px] bg-accent/5 rounded-full blur-[100px] -z-10 pointer-events-none opacity-50" />
         
