@@ -27,7 +27,7 @@ router.post("/", async (req, res) => {
     : "";
 
   const resumeFocus = body.resumeText
-    ? `Tailor questions based on this candidate's resume:\n${body.resumeText.slice(0, 1500)}\nAsk about specific experiences, projects, and skills mentioned.`
+    ? `Tailor questions based on this candidate's resume:\n${body.resumeText.slice(0, 2500)}\n\nIMPORTANT: Ask about specific projects, tools, companies, technologies, and accomplishments mentioned in the resume. At least half the questions should reference something from the resume directly (e.g. "I see you worked on X at Y — tell me about..."). Make questions feel personalized and targeted, not generic.`
     : "";
 
   const drillFocus = body.drillCategory

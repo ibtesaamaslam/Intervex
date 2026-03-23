@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import {
   Loader2, Briefcase, Sparkles, ArrowRight, ArrowLeft, Building2,
-  FileText, User, Clock, Target, Calendar, Zap, CheckCircle2, Brain
+  FileText, User, Clock, Target, Calendar, Zap, CheckCircle2, Brain,
+  Upload, X, File
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,44 @@ export function NewSession() {
     resumeText: "", persona: "friendly", timedMode: false,
     timePerQuestion: 120, targetDate: "", drillMode: false,
   });
+
+  // Resume upload state
+  const [resumeMode, setResumeMode] = useState<"upload" | "paste">("upload");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isParsing, setIsParsing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = useCallback(async (file: File) => {
+    const allowed = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"];
+    if (!allowed.includes(file.type)) {
+      toast({ title: "Unsupported file", description: "Please upload a PDF or DOCX file.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Maximum file size is 10 MB.", variant: "destructive" });
+      return;
+    }
+    setUploadedFile(file);
+    setIsParsing(true);
+    try {
+      const result = await api.parseResume(file);
+      set("resumeText", result.text);
+      toast({ title: "Resume parsed!", description: `${result.wordCount.toLocaleString()} words extracted from ${result.fileName}` });
+    } catch (err: unknown) {
+      toast({ title: "Parse failed", description: err instanceof Error ? err.message : "Could not read the file.", variant: "destructive" });
+      setUploadedFile(null);
+    } finally {
+      setIsParsing(false);
+    }
+  }, [toast]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileSelect(file);
+  }, [handleFileSelect]);
 
   const set = (key: keyof FormData, val: string | boolean | number) =>
     setForm(prev => ({ ...prev, [key]: val }));
@@ -153,25 +192,122 @@ export function NewSession() {
     <div key="resume" className="space-y-4">
       <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 text-sm text-primary/80 leading-relaxed">
         <Sparkles className="w-4 h-4 inline mr-2" />
-        Paste your resume and Intervex will generate questions tailored to your specific experience, skills, and projects.
+        Upload or paste your resume — Intervex will tailor questions to your specific projects, skills, and experience.
       </div>
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          <FileText className="w-4 h-4 inline mr-1.5" />Your Resume <span className="text-muted-foreground font-normal">(optional — paste as text)</span>
-        </label>
-        <textarea
-          value={form.resumeText}
-          onChange={e => set("resumeText", e.target.value)}
-          placeholder="Paste your resume text here... Include your experience, skills, projects, and education."
-          rows={12}
-          className="w-full px-4 py-3 rounded-xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none text-sm leading-relaxed"
-        />
-        {form.resumeText && (
-          <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" />{form.resumeText.split(/\s+/).length} words — questions will be tailored to your background
-          </p>
-        )}
+
+      {/* Mode tabs */}
+      <div className="flex gap-2 p-1 rounded-xl bg-secondary/40 border border-border w-fit">
+        {(["upload", "paste"] as const).map(mode => (
+          <button key={mode} type="button" onClick={() => setResumeMode(mode)}
+            className={cn("px-5 py-2 rounded-lg text-sm font-medium transition-all capitalize",
+              resumeMode === mode ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"
+            )}>
+            {mode === "upload" ? <><Upload className="w-3.5 h-3.5 inline mr-1.5" />Upload File</> : <><FileText className="w-3.5 h-3.5 inline mr-1.5" />Paste Text</>}
+          </button>
+        ))}
       </div>
+
+      {resumeMode === "upload" ? (
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }}
+          />
+
+          {!uploadedFile && !isParsing ? (
+            <div
+              onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={cn(
+                "border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all",
+                isDragging ? "border-primary bg-primary/10 scale-[1.01]" : "border-border/60 hover:border-primary/50 hover:bg-primary/5"
+              )}>
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Upload className={cn("w-8 h-8 transition-colors", isDragging ? "text-primary" : "text-muted-foreground")} />
+              </div>
+              <p className="text-base font-semibold text-foreground mb-1">Drop your resume here</p>
+              <p className="text-sm text-muted-foreground mb-4">or click to browse files</p>
+              <div className="flex items-center justify-center gap-3">
+                <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 font-medium">
+                  <File className="w-3 h-3" /> PDF
+                </span>
+                <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-medium">
+                  <File className="w-3 h-3" /> DOCX
+                </span>
+                <span className="text-xs text-muted-foreground">Max 10 MB</span>
+              </div>
+            </div>
+          ) : isParsing ? (
+            <div className="border-2 border-dashed border-primary/40 rounded-2xl p-12 text-center bg-primary/5">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              </div>
+              <p className="text-base font-semibold text-foreground mb-1">Parsing your resume...</p>
+              <p className="text-sm text-muted-foreground">Extracting text from {uploadedFile?.name}</p>
+            </div>
+          ) : (
+            <div className="border-2 border-emerald-400/30 rounded-2xl p-6 bg-emerald-400/5">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-400/10 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground text-sm truncate">{uploadedFile?.name}</p>
+                  <p className="text-sm text-emerald-400 mt-0.5">{form.resumeText.split(/\s+/).filter(Boolean).length.toLocaleString()} words extracted successfully</p>
+                  <p className="text-xs text-muted-foreground mt-2">Questions will be tailored to your projects, skills, and experience.</p>
+                </div>
+                <button onClick={() => { setUploadedFile(null); set("resumeText", ""); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Preview snippet */}
+              {form.resumeText && (
+                <div className="mt-4 pt-4 border-t border-emerald-400/10">
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Preview</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4 font-mono bg-black/20 p-3 rounded-lg">
+                    {form.resumeText.slice(0, 400)}...
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {uploadedFile && !isParsing && (
+            <button type="button" onClick={() => { setUploadedFile(null); set("resumeText", ""); fileInputRef.current?.click(); }}
+              className="mt-3 text-sm text-primary hover:underline">
+              Upload a different file
+            </button>
+          )}
+        </div>
+      ) : (
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Paste resume text <span className="text-muted-foreground font-normal">(optional)</span>
+          </label>
+          <textarea
+            value={form.resumeText}
+            onChange={e => set("resumeText", e.target.value)}
+            placeholder="Paste your resume text here... Include your experience, skills, projects, and education."
+            rows={12}
+            className="w-full px-4 py-3 rounded-xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none text-sm leading-relaxed"
+          />
+          {form.resumeText && (
+            <p className="text-xs text-emerald-400 mt-1.5 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" />{form.resumeText.split(/\s+/).filter(Boolean).length.toLocaleString()} words
+            </p>
+          )}
+        </div>
+      )}
+
+      <p className="text-xs text-muted-foreground">
+        Your resume is only used to generate relevant interview questions and is not stored permanently.
+      </p>
     </div>,
 
     /* Step 2: Settings */

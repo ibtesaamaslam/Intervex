@@ -172,4 +172,16 @@ export const api = {
   dashboard: {
     get: () => apiFetch<DashboardData>("/dashboard"),
   },
+  parseResume: (file: File) => {
+    const form = new FormData();
+    form.append("resume", file);
+    return fetch(`${BASE}/parse-resume`, { method: "POST", body: form })
+      .then(async res => {
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: res.statusText }));
+          throw new Error(err.error ?? "Failed to parse resume");
+        }
+        return res.json() as Promise<{ text: string; wordCount: number; fileName: string }>;
+      });
+  },
 };
