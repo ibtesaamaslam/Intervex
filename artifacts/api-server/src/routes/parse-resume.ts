@@ -1,16 +1,28 @@
 import { Router, type IRouter } from "express";
 import multer from "multer";
-import { createRequire } from "module";
 import mammoth from "mammoth";
 
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse") as (buffer: Buffer) => Promise<{ text: string; numpages: number }>;
+// Lazy-load pdf-parse via dynamic import so it works in both:
+//   - dev  (ESM / tsx): import() with CJS interop
+//   - prod (esbuild CJS bundle): esbuild converts import() of an external
+//     module to an async require(), no import.meta dependency needed
+type PdfParseResult = { text: string; numpages: number };
+type PdfParseFn = (buffer: Buffer) => Promise<PdfParseResult>;
+
+let _pdfParse: PdfParseFn | null = null;
+async function getPdfParse(): Promise<PdfParseFn> {
+  if (_pdfParse) return _pdfParse;
+  const mod = await import("pdf-parse");
+  // CJS default export may be on .default or on the module itself
+  _pdfParse = (mod.default ?? mod) as unknown as PdfParseFn;
+  return _pdfParse;
+}
 
 const router: IRouter = Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter(_req, file, cb) {
     const allowed = [
       "application/pdf",
@@ -44,15 +56,14 @@ router.post("/", (req, res, next) => {
     let text = "";
 
     if (file.mimetype === "application/pdf") {
+      const pdfParse = await getPdfParse();
       const data = await pdfParse(file.buffer);
       text = data.text ?? "";
     } else {
-      // DOCX / DOC
       const result = await mammoth.extractRawText({ buffer: file.buffer });
       text = result.value ?? "";
     }
 
-    // Clean up the extracted text
     text = text
       .replace(/\r\n/g, "\n")
       .replace(/\r/g, "\n")
