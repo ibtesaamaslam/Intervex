@@ -9,6 +9,7 @@ import { NewSession } from "@/pages/new-session";
 import { ActiveSession } from "@/pages/active-session";
 import { ReviewSession } from "@/pages/review-session";
 import { Dashboard } from "@/pages/dashboard";
+import { Playbook } from "@/pages/playbook";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ function Router() {
         <Route path="/session/:id" component={ActiveSession} />
         <Route path="/session/:id/review" component={ReviewSession} />
         <Route path="/dashboard" component={Dashboard} />
+        <Route path="/playbook" component={Playbook} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

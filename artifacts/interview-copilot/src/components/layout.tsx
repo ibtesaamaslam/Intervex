@@ -5,7 +5,8 @@ import {
   MessageSquarePlus, 
   Zap,
   Menu,
-  X
+  X,
+  BookOpen
 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,6 +18,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/session/new", label: "New Session", icon: MessageSquarePlus },
+    { href: "/playbook", label: "Playbook", icon: BookOpen },
   ];
 
   const Sidebar = () => (
