@@ -1,3 +1,6 @@
+<img width="1024" height="682" alt="image" src="https://github.com/user-attachments/assets/29cbcbf2-cf46-47ee-be0f-f761b7dbfb49" />
+<br>
+
 # 🎯 Intervex — AI-Powered Interview Practice Platform
 
 <div align="center">
